@@ -1,0 +1,190 @@
+﻿set search_path to football_database;
+CREATE TABLE PERSON
+(
+  PERSON_ID INT NOT NULL,
+  First_Name VARCHAR(30) NOT NULL,
+  Middle_Name VARCHAR(30),
+  Last_Name VARCHAR(30),
+  DOB DATE ,
+  Nationality VARCHAR(30) ,
+  primary key(person_id)
+);
+
+CREATE TABLE Manager
+(
+  Manager_ID INT NOT NULL,
+  Debut DATE NOT NULL,
+  PRIMARY KEY (Manager_ID),
+FOREIGN KEY (MANAGER_ID) REFERENCES PERSON(PERSON_ID) ON DELETE CASCADE ON   UPDATE CASCADE
+);
+
+CREATE TABLE Player
+(
+  Player_ID INT NOT NULL,
+  Debut DATE NOT NULL,
+  height INT ,
+  weight INT ,
+  foot VARCHAR(10) ,
+  PRIMARY KEY (Player_ID),
+FOREIGN KEY (PLAYER_ID) REFERENCES PERSON(PERSON_ID) ON DELETE CASCADE ON   UPDATE CASCADE
+);
+
+CREATE TABLE Referee
+(
+  Referee_ID INT NOT NULL,
+  Debut DATE NOT NULL,
+  PRIMARY KEY (Referee_ID),
+FOREIGN KEY (REFEREE_ID) REFERENCES PERSON(PERSON_ID) ON DELETE CASCADE ON   UPDATE CASCADE
+);
+
+CREATE TABLE Stadium
+(
+  Stadium_ID INT NOT NULL,
+  Stadium_Name VARCHAR(30) NOT NULL,
+  Capacity INT ,
+  Country VARCHAR(30) NOT NULL,
+  Pitchware VARCHAR(10) ,
+  City VARCHAR(30) NOT NULL,
+  PRIMARY KEY (Stadium_ID)
+);
+
+CREATE TABLE League
+(
+  League_ID INT NOT NULL,
+  League_Name VARCHAR(30) NOT NULL,
+  League_Type VARCHAR(30) NOT NULL,
+  Country VARCHAR(30) ,
+  PRIMARY KEY (League_ID)
+);
+
+CREATE TABLE Position
+(
+  Short_Form VARCHAR(5) NOT NULL,
+  Position_Type VARCHAR(20) NOT NULL,
+  Full_Form VARCHAR(30) NOT NULL,
+  PRIMARY KEY (Short_Form)
+);
+
+CREATE TABLE Formation
+(
+  Formation_Name VARCHAR(20) NOT NULL,
+  Formation_Type VARCHAR(30) NOT NULL,
+  PRIMARY KEY (Formation_Name)
+);
+
+CREATE TABLE Player_Sponsor
+(
+  Sponsor_Name VARCHAR(20) NOT NULL,
+  Sponsoring_Year INT NOT NULL,
+  Player_ID INT NOT NULL,
+  PRIMARY KEY (Sponsor_Name, Sponsoring_Year, Player_ID),
+  FOREIGN KEY (Player_ID) REFERENCES Player(Player_ID) ON DELETE CASCADE ON   UPDATE CASCADE
+);
+
+CREATE TABLE League_Sponsor
+(
+  Sponsor_Name VARCHAR(20) NOT NULL,
+  Sponsoring_Year INT NOT NULL,
+  League_ID INT NOT NULL,
+  PRIMARY KEY (Sponsor_Name, Sponsoring_Year, League_ID),
+  FOREIGN KEY (League_ID) REFERENCES League(League_ID) ON DELETE CASCADE ON   UPDATE CASCADE
+);
+
+CREATE TABLE Preferred_Position
+(
+  Player_ID INT NOT NULL,
+  Position_Short_Form VARCHAR(5) NOT NULL,
+  PRIMARY KEY (Player_ID, Position_Short_Form),
+  FOREIGN KEY (Player_ID) REFERENCES Player(Player_ID) ON DELETE CASCADE ON   UPDATE CASCADE,
+  FOREIGN KEY (Position_Short_Form) REFERENCES Position(Short_Form) ON DELETE CASCADE ON   UPDATE CASCADE
+);
+
+CREATE TABLE Team
+(
+  Team_ID INT NOT NULL,
+  Team_Name VARCHAR(30) NOT NULL,
+  Country VARCHAR(30) NOT NULL,
+  Owner VARCHAR(30) ,
+  City VARCHAR(30) ,
+  Type VARCHAR(10) NOT NULL,
+  Home_Stadium_ID INT NOT NULL,
+  PRIMARY KEY (Team_ID),
+  FOREIGN KEY (Home_Stadium_ID) REFERENCES Stadium(Stadium_ID) ON DELETE SET NULL ON   UPDATE CASCADE
+);
+
+CREATE TABLE Match
+(
+  Match_ID INT NOT NULL,
+  Date DATE NOT NULL,
+  Kickoff_Time time ,
+  Phase VARCHAR(20) ,
+  League_Year INT NOT NULL,
+  Attendance INT NOT NULL,
+  Referee_ID INT NOT NULL,
+  Stadium_ID INT NOT NULL,
+  League_ID INT NOT NULL,
+  PRIMARY KEY (Match_ID),
+  FOREIGN KEY (Referee_ID) REFERENCES Referee(Referee_ID) ON DELETE SET NULL ON   UPDATE CASCADE,
+  FOREIGN KEY (Stadium_ID) REFERENCES Stadium(Stadium_ID) ON DELETE SET NULL ON   UPDATE CASCADE,
+  FOREIGN KEY (League_ID) REFERENCES League(League_ID) ON DELETE CASCADE ON   UPDATE CASCADE
+);
+
+CREATE TABLE Player_Match
+(
+  Sub_In INT,
+  Sub_Out INT,
+  Goals_Scored INT ,
+  Assist INT ,
+  Touches INT ,
+  Fouls INT ,
+  YellowCard INT ,
+  RedCard INT ,
+  Match_ID INT NOT NULL,
+  Team_ID INT NOT NULL,
+  Position_Played VARCHAR(5) ,
+  Player_ID INT NOT NULL,
+  PRIMARY KEY (Match_ID, Player_ID),
+  FOREIGN KEY (Match_ID) REFERENCES Match(Match_ID) ON DELETE CASCADE ON   UPDATE CASCADE,
+  FOREIGN KEY (Team_ID) REFERENCES Team(Team_ID) ON DELETE SET NULL ON   UPDATE CASCADE,
+  FOREIGN KEY (Position_Played) REFERENCES Position(Short_Form) ON DELETE SET NULL ON   UPDATE CASCADE,
+  FOREIGN KEY (Player_ID) REFERENCES Player(Player_ID)  ON DELETE CASCADE ON   UPDATE CASCADE
+);
+
+CREATE TABLE Player_Goals
+(
+  Type_Of_Goal VARCHAR(20) NOT NULL,
+  Goal_Minute INT NOT NULL,
+  Match_ID INT NOT NULL,
+  Player_ID INT NOT NULL,
+  PRIMARY KEY (Type_Of_Goal, Goal_Minute, Match_ID, Player_ID),
+  FOREIGN KEY (Match_ID) REFERENCES Match(Match_ID) ON DELETE CASCADE ON   UPDATE CASCADE,
+  FOREIGN KEY (Player_ID) REFERENCES Player(Player_ID)  ON DELETE CASCADE ON   UPDATE CASCADE
+);
+
+CREATE TABLE Team_Match
+(
+  Goal_Scored INT NOT NULL,
+  Team_ID INT NOT NULL,
+  Match_ID INT NOT NULL,
+  Manager_ID INT NOT NULL,
+  Captain_ID INT NOT NULL,
+  Formation_Name VARCHAR(20) NOT NULL,
+  win INT,
+  Lose INT,
+  Draw INT,
+  PRIMARY KEY (Team_ID, Match_ID),
+  FOREIGN KEY (Team_ID) REFERENCES Team(Team_ID) ON DELETE CASCADE ON   UPDATE CASCADE,
+  FOREIGN KEY (Match_ID) REFERENCES Match(Match_ID) ON DELETE CASCADE ON   UPDATE CASCADE,
+  FOREIGN KEY (Manager_ID) REFERENCES Manager(Manager_ID) ON DELETE SET NULL ON   UPDATE CASCADE,
+  FOREIGN KEY (Captain_ID) REFERENCES Player(Player_ID) ON DELETE SET NULL ON   UPDATE CASCADE,
+  FOREIGN KEY (Formation_Name) REFERENCES Formation(Formation_Name)  ON DELETE SET NULL ON   UPDATE CASCADE
+);
+
+CREATE TABLE Team_Sponsor
+(
+  Sponsor_Name VARCHAR(20) NOT NULL,
+  Sponsoring_Year INT NOT NULL,
+  Team_ID INT NOT NULL,
+  PRIMARY KEY (Sponsor_Name, Sponsoring_Year, Team_ID),
+  FOREIGN KEY (Team_ID) REFERENCES Team(Team_ID) ON DELETE CASCADE ON   UPDATE CASCADE
+);

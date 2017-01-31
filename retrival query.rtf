@@ -1,0 +1,151 @@
+{\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fswiss\fcharset0 Calibri;}{\f1\fnil\fcharset0 Calibri;}}
+{\*\generator Riched20 6.3.9600}\viewkind4\uc1 
+\pard\sa200\sl276\slmult1\b\f0\fs28\lang9 .Give the stadiums in which home team has WINS greater or equal than LOSES.\f1\fs22\par
+\b0\par
+set search_path to football_database;\par
+select stadium_name from\par
+(SELECT HOME_STADIUM_ID FROM \par
+(SELECT \par
+  HOME_STADIUM_ID, TEAM_ID , WIN ,LOSE ,DRAW  \par
+FROM \par
+  football_database.team_match NATURAL JOIN\par
+  football_database.team NATURAL JOIN\par
+  football_database.match\par
+WHERE \par
+\tab TEAM.HOME_STADIUM_ID=match.STADIUM_ID\par
+\tab ) AS H GROUP BY HOME_STADIUM_ID,TEAM_ID HAVING sum(WIN)>=sum(LOSE) ) as id join stadium on home_stadium_id = stadium_id;\par
+\b\f0\fs28\par
+.Name the referee who has given  red cards for a given team with id =4 in descending order of red cards given.\par
+\b0\par
+set search_path to football_database;\par
+select first_name as referee_name from\par
+(\par
+SELECT referee_id , sum(redcard) as num_of_red  FROM \par
+(SELECT \par
+  *  \par
+FROM ( select * from player_match where team_id=4 ) as x  NATURAL JOIN\par
+   football_database.match\par
+   \tab ) AS H GROUP BY referee_id order by num_of_red desc ) as x  join person on referee_id=person_id;\par
+\par
+
+\pard\b .Name the Goal Keepers who had saved goals > (2) in UEFA Champions\par
+
+\pard\sa200\sl276\slmult1 league from 2013 to 2016.\f1\fs22\par
+\b0\par
+set search_path to football_database;\par
+select player_id , first_name from\par
+( \par
+select player_id from (\par
+(select * from player_goals \par
+where match_id in (select match_id from match natural join league where league_name='uefa champions league' and league_year>=2013 \par
+and league_year<=2016) and type_of_goal='SAVE' ) as pg\par
+natural join ( select player_id , match_id from player_match where position_played = 'GK' )as pp ) group by player_id  having count(*) >2 ) as mm \par
+ join person on person_id=player_id;\par
+
+\pard\b\f0\fs28\par
+.Give the manager-wise stats for 'Real Madrid' i.e., matches played , won\par
+
+\pard\sa200\sl276\slmult1 , draw , lost against 'Barcelona' club in their home\par
+\b0\par
+set search_path to football_database;\par
+SELECT MANAGER_ID , COUNT (*) AS NUM_OF_MATCHES , SUM(WIN) AS MATCHES_WON ,SUM (LOSE)AS MATCHES_LOST , SUM(DRAW) AS MATCHES_DRAW FROM \par
+( SELECT * FROM \par
+(SELECT * FROM TEAM_MATCH NATURAL JOIN TEAM WHERE MATCH_ID IN (SELECT MATCH_ID FROM TEAM_MATCH NATURAL JOIN TEAM WHERE TEAM_NAME='Barcelona' ) \par
+ AND TEAM_NAME='Real Madrid' )\par
+  AS  RMMB\par
+NATURAL JOIN MATCH  \par
+WHERE STADIUM_ID IN (SELECT HOME_STADIUM_ID FROM TEAM WHERE TEAM_NAME='Barcelona')\par
+) AS XX\par
+GROUP BY MANAGER_ID;\par
+\par
+\b\f1 .For all players give the total number goals scored , matches played,won , lose, draw in the "away" matches in descending order of goals_scored .\par
+\par
+\b0\fs22 set search_path to football_database;\par
+select player_id , count(*) as matches_played , sum (goals_scored) as goals_scored , sum (win) as won_matches, sum (lose) as lose_matches\par
+, sum (draw) as draw_matches from(\par
+(select * from (( select * from player_match where sub_in is not null) as p natural join match ) as pmm natural join team\par
+ where home_stadium_id !=stadium_id ) as x\par
+natural join team_match  \par
+) as pa group by player_id   order by goals_scored desc;\par
+\b\fs28\par
+.Name spanish clubs that have not been lost in their homes  against club 'Barcaleno'  in 2015.\par
+\b0\par
+set search_path to football_database;\par
+select team_name from ( \par
+ select *from (\par
+select * from  \par
+team_match natural join team where match_id in \par
+( select match_id  from team_match natural join team where team_name='Barcelona' ) and team_name <> 'Barcelona'\par
+and country='spain') as x natural join match where league_year = 2015 and home_stadium_id=stadium_id\par
+) as tn group by team_name having sum(lose)=0;\par
+\b\par
+.Give the number of matches played,won ,draw,lost when Jlloyd SAMUEL played in the match and hasn't scored atleast one goal .  \par
+\fs22  \b0\par
+set search_path to football_database;\par
+select count (*) as matchesplayed,sum(win) as won , sum (lose) as lost , sum(draw) as draw from\par
+(player natural join player_match natural join team_match) join person on person_id =player_id where first_name = 'Jlloyd' and last_name = 'SAMUEL' and  sub_in is not null and\par
+( goals_scored = 0 or goals_scored is  null);\par
+\par
+\fs28 .\b  Give the total number of corner kick goals scored by each defense player\b0\fs22\par
+set search_path to football_database;\par
+Select First_Name,n from\par
+(select Player_ID,count(*) as n from(\par
+select * from\par
+(select Player_ID,match_id from Player_Match join Position on Position_Played=Short_Form\par
+where Position_Type= 'Defense') as F natural join Player_Goals\par
+where Type_OF_Goal = 'CK' ) as x group by Player_ID) as T Join Person on player_id = person_id;\par
+\par
+\b\fs28 For each and every player give their playerId and the number of teams they scored the goals against in 2015.\par
+\b0\fs24\par
+set search_path to football_database;\par
+select pi, count(op) as num_of_teams from (\par
+select *from (\par
+select player_id , op from (\par
+select * from (\par
+(select * from player_match natural join match where league_year=2015 and goals_scored!=0 and goals_scored is not null)\par
+as a join (select match_id, team_id as op from team_match) as x\par
+  on a.match_id = x.match_id \par
+ ) where a.team_id <> x.op\par
+) as b group by player_id , op ) as mm right join ( select player_id as pi from player ) as nn on pi = player_id\par
+) as c group by pi order by num_of_teams desc ;\par
+\b\par
+Name sponsor for any Player who scored the most goals in uefa champions league 2014 for the winning team in that league .\par
+\b0 set search_path to football_database;\par
+select distinct sponsor_name from\par
+(\par
+select player_id, count(goals_scored) as goals_scored from(\par
+select * from player_match natural join match natural join league where league_year = 2014 and league_name = 'uefa champions league' and team_id in \par
+(select team_id from team_match natural join match where league_year = 2014 and league_name = 'uefa champions league' and phase ='final' and win=1)\par
+) as y group by player_id order by goals_scored desc limit 1 )as z  natural join player_sponsor where sponsoring_year=2014;\par
+\par
+\b\fs28 Name the players who scored atleast one goal in atleast 50% of matches he played .\b0\par
+set search_path to football_database;\par
+select player_id from (\par
+(select * from player_match where sub_in is not null ) as x left join (select player_id as pi, match_id as mi from(\par
+select * from player_goals where type_of_goal <>'SAVE'\par
+) as b  group by player_id,match_id) as c on player_id=pi and match_id=mi\par
+)\par
+group by player_id having count(mi)>=0.5*count(match_id) ;\par
+\par
+\b For the players who played the matches give the formation name , positions played and goals_scored ,assists ,matches played , won ,draw,lose in that formation and position for all the matches he has played.   \par
+\par
+\b0\fs24 set search_path to football_database;\par
+select player_id , formation_name , position_played , count(match_id)as matches_played ,\par
+sum(goals_scored) as goals_scored ,sum(win) as won ,sum(lose) as lose,sum (draw) as draw\par
+from player_match natural join team_match group by player_id , formation_name , position_played order by player_id ;\par
+\par
+\b\fs28 For every goal keeper who played the matches give the clean sheets in uefa champions league \fs24 2014.\par
+\par
+\b0 set search_path to football_database; \par
+select player_id , count (*) as clean_sheets from\par
+(\par
+select *from(\par
+(select * from player_match where position_played='GK' and sub_in is not null)as pm \par
+join \par
+(select *from team_match natural join match natural join league \par
+where league_name='uefa champions league' and league_year=2014 and goal_scored=0\par
+)as tm on pm.match_id=tm.match_id) \par
+where pm.team_id!=tm.team_id ) as C\par
+group by player_id order by clean_sheets;\par
+}
+ 
